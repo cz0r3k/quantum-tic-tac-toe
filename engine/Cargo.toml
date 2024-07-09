@@ -7,3 +7,4 @@ edition = "2021"
 serde = { version = "1.0.203", features = ["derive"] }
 petgraph = "0.6.5"
 array2d = "0.3.2"
+error-stack = "0.4.1"

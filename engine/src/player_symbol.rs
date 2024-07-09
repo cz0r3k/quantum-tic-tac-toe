@@ -8,6 +8,15 @@ pub enum PlayerSymbol {
     Y,
 }
 
+impl PlayerSymbol {
+    pub fn opposite_symbol(player_symbol: PlayerSymbol) -> PlayerSymbol {
+        match player_symbol {
+            PlayerSymbol::Y => PlayerSymbol::X,
+            PlayerSymbol::X => PlayerSymbol::Y,
+        }
+    }
+}
+
 impl fmt::Display for PlayerSymbol {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {

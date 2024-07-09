@@ -13,6 +13,7 @@ pub struct Game {
 }
 
 impl Game {
+    #[must_use]
     pub fn new(size: usize) -> Self {
         Game {
             board: Board::new(size),
@@ -20,6 +21,10 @@ impl Game {
         }
     }
 
+    /// # Errors
+    ///
+    /// Will return Err if game already end, not this player turn,
+    /// wrong move type or wrong move coordinate or index.
     pub fn player_move(
         &mut self,
         player_move: Move,
@@ -42,7 +47,7 @@ impl Game {
                 let cycle = self
                     .board
                     .mark(
-                        vec![field1, field2],
+                        &[field1, field2],
                         player_symbol,
                         self.game_status.get_turn(),
                     )

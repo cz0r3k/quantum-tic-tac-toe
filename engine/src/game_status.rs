@@ -23,7 +23,7 @@ impl GameStatus {
 
     pub fn next_turn(&mut self, is_collapsed: bool) {
         if self.move_type == MoveType::Collapse {
-            self.move_type = MoveType::Mark
+            self.move_type = MoveType::Mark;
         } else {
             self.turn += 1;
             self.player_turn = PlayerSymbol::opposite_symbol(self.player_turn);

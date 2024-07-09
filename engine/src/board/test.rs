@@ -20,7 +20,7 @@ fn default_board() {
 #[test]
 fn first_mark() {
     let mut board = Board::new(3);
-    let fields_coordinates = vec![
+    let fields_coordinates = &[
         FieldCoordinate { x: 0, y: 0 },
         FieldCoordinate { x: 1, y: 0 },
     ];
@@ -36,7 +36,7 @@ fn first_mark() {
 #[test]
 fn none_cycle() {
     let mut board = Board::new(3);
-    let fields_coordinates = vec![
+    let fields_coordinates = &[
         FieldCoordinate { x: 0, y: 0 },
         FieldCoordinate { x: 1, y: 0 },
     ];
@@ -49,11 +49,11 @@ fn none_cycle() {
 #[test]
 fn mark_out_of_band() {
     let mut board = Board::new(3);
-    let fields_coordinates = vec![
+    let fields_coordinates = &[
         FieldCoordinate { x: 3, y: 0 },
         FieldCoordinate { x: 3, y: 1 },
     ];
-    assert!(board.mark(fields_coordinates, PlayerSymbol::X, 0).is_err())
+    assert!(board.mark(fields_coordinates, PlayerSymbol::X, 0).is_err());
 }
 
 #[test]
@@ -63,11 +63,11 @@ fn mark_on_collapsed() {
         .positions
         .set(0, 0, Field::Collapsed(PlayerSymbol::X))
         .unwrap();
-    let fields_coordinates = vec![
+    let fields_coordinates = &[
         FieldCoordinate { x: 0, y: 0 },
         FieldCoordinate { x: 0, y: 1 },
     ];
-    assert!(board.mark(fields_coordinates, PlayerSymbol::X, 0).is_err())
+    assert!(board.mark(fields_coordinates, PlayerSymbol::X, 0).is_err());
 }
 
 #[test]
@@ -77,21 +77,21 @@ fn same_fields_coordinates() {
         .positions
         .set(0, 0, Field::Collapsed(PlayerSymbol::X))
         .unwrap();
-    let fields_coordinates = vec![
+    let fields_coordinates = &[
         FieldCoordinate { x: 0, y: 0 },
         FieldCoordinate { x: 0, y: 0 },
     ];
-    assert!(board.mark(fields_coordinates, PlayerSymbol::X, 0).is_err())
+    assert!(board.mark(fields_coordinates, PlayerSymbol::X, 0).is_err());
 }
 
 #[test]
 fn check_simple_cycle() {
     let mut board = Board::new(3);
-    let fields_coordinates = vec![
+    let fields_coordinates = &[
         FieldCoordinate { x: 0, y: 0 },
         FieldCoordinate { x: 1, y: 0 },
     ];
-    let _ = board.mark(fields_coordinates.clone(), PlayerSymbol::X, 0);
+    let _ = board.mark(fields_coordinates, PlayerSymbol::X, 0);
     assert!(board
         .mark(fields_coordinates, PlayerSymbol::Y, 1)
         .unwrap()
@@ -101,31 +101,31 @@ fn check_simple_cycle() {
 #[test]
 fn simply_cycle() {
     let mut board = Board::new(3);
-    let fields_coordinates = vec![
+    let fields_coordinates = &[
         FieldCoordinate { x: 0, y: 0 },
         FieldCoordinate { x: 1, y: 0 },
     ];
-    let _ = board.mark(fields_coordinates.clone(), PlayerSymbol::X, 0);
+    let _ = board.mark(fields_coordinates, PlayerSymbol::X, 0);
     let cycle = Some(Cycle::new(
-        fields_coordinates.clone(),
+        fields_coordinates.to_vec(),
         vec![vec![0, 1], vec![0, 1]],
     ));
     assert_eq!(
         cycle,
         board.mark(fields_coordinates, PlayerSymbol::Y, 1).unwrap()
-    )
+    );
 }
 
 #[test]
 #[ignore]
 fn simply_collapsed_positions() {
     let mut board = Board::new(3);
-    let fields_coordinates = vec![
+    let fields_coordinates = &[
         FieldCoordinate { x: 0, y: 0 },
         FieldCoordinate { x: 1, y: 0 },
     ];
-    let _ = board.mark(fields_coordinates.clone(), PlayerSymbol::X, 0);
-    let _ = board.mark(fields_coordinates.clone(), PlayerSymbol::Y, 1);
+    let _ = board.mark(fields_coordinates, PlayerSymbol::X, 0);
+    let _ = board.mark(fields_coordinates, PlayerSymbol::Y, 1);
     let _ = board.collapse(FieldCoordinate { x: 0, y: 0 }, 0);
 
     let mut board_positions = vec![
@@ -141,12 +141,12 @@ fn simply_collapsed_positions() {
 #[ignore]
 fn simply_collapsed_connections() {
     let mut board = Board::new(3);
-    let fields_coordinates = vec![
+    let fields_coordinates = &[
         FieldCoordinate { x: 0, y: 0 },
         FieldCoordinate { x: 1, y: 0 },
     ];
-    let _ = board.mark(fields_coordinates.clone(), PlayerSymbol::X, 0);
-    let _ = board.mark(fields_coordinates.clone(), PlayerSymbol::Y, 1);
+    let _ = board.mark(fields_coordinates, PlayerSymbol::X, 0);
+    let _ = board.mark(fields_coordinates, PlayerSymbol::Y, 1);
     let _ = board.collapse(FieldCoordinate { x: 0, y: 0 }, 0);
     let connections: Graph<(), usize, Undirected> =
         Graph::from_elements(iter::repeat_n(Element::Node { weight: () }, 3 * 3));

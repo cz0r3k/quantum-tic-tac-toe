@@ -4,18 +4,18 @@ use std::iter::zip;
 
 use array2d::Array2D;
 use error_stack::{Report, Result};
-use petgraph::{Graph, Undirected};
 use petgraph::algo::astar;
 use petgraph::data::{Element, FromElements};
 use petgraph::stable_graph::NodeIndex;
 use petgraph::visit::NodeIndexable;
+use petgraph::{Graph, Undirected};
 
 use crate::board::board_error::BoardError;
 use crate::cycle::Cycle;
-use crate::DEFAULT_BOARD_SIZE;
 use crate::field::Field;
 use crate::field_coordinate::FieldCoordinate;
 use crate::player_symbol::PlayerSymbol;
+use crate::DEFAULT_BOARD_SIZE;
 
 pub struct Board {
     size: usize,
@@ -45,7 +45,7 @@ impl Board {
 
     pub fn mark(
         &mut self,
-        fields_coordinates: Vec<FieldCoordinate>,
+        fields_coordinates: &[FieldCoordinate],
         player_symbol: PlayerSymbol,
         turn: usize,
     ) -> Result<Option<Cycle>, BoardError> {
@@ -57,9 +57,8 @@ impl Board {
                 if hash_set.contains(&field_coordinate) {
                     return Err(Report::new(BoardError::new(field_coordinate))
                         .attach_printable("Same coordinates"));
-                } else {
-                    hash_set.insert(field_coordinate);
                 }
+                hash_set.insert(field_coordinate);
                 match field {
                     Some(field) => {
                         if !matches!(field, &Field::Entangled(_)) {
@@ -80,21 +79,21 @@ impl Board {
                     value[turn] = Some(player_symbol);
                     Some(Field::Entangled(value.to_owned()))
                 }
-                _ => None,
+                Field::Collapsed(_) => None,
             }),
-            &fields_coordinates,
+            fields_coordinates,
         )
         .for_each(|(field, &field_coordinate)| {
             self.positions
                 .set(field_coordinate.y, field_coordinate.x, field)
-                .unwrap()
+                .unwrap();
         });
 
         let nodes = fields_coordinates
             .iter()
             .map(|&field_coordinate| {
                 self.connections
-                    .from_index(FieldCoordinate::into_usize(&field_coordinate, self.size))
+                    .from_index(FieldCoordinate::into_usize(field_coordinate, self.size))
             })
             .collect::<Vec<_>>();
 
@@ -106,7 +105,7 @@ impl Board {
             |_| 0,
         );
         if path.is_some() {
-            self.last_cycle = self.map_cycle(path, turn);
+            self.last_cycle = Some(self.map_cycle(path, turn));
             Ok(self.last_cycle.clone())
         } else {
             self.connections.add_edge(nodes[0], nodes[1], turn);
@@ -116,17 +115,18 @@ impl Board {
 
     #[allow(unused)]
     pub fn collapse(
-        &self,
+        &mut self,
         field_coordinate: FieldCoordinate,
         index: usize,
     ) -> Result<(), BoardError> {
         todo!()
     }
-    fn map_cycle(&self, cycle: Option<(i32, Vec<NodeIndex>)>, turn: usize) -> Option<Cycle> {
+    #[allow(clippy::cast_sign_loss)]
+    fn map_cycle(&self, cycle: Option<(i32, Vec<NodeIndex>)>, turn: usize) -> Cycle {
         let cycle = cycle.unwrap();
-        let cycle_size = cycle.0;
+        let cycle_size = cycle.0 as usize;
         let cycle = cycle.1;
-        let mut fields_indexes = vec![Vec::<usize>::new(); cycle_size as usize + 1];
+        let mut fields_indexes = vec![Vec::<usize>::new(); cycle_size + 1];
         let fields_coordinates = cycle
             .iter()
             .map(|node_index| FieldCoordinate::from_usize(node_index.index(), self.size))
@@ -134,18 +134,14 @@ impl Board {
         for i in 0..cycle_size {
             let weight = self
                 .connections
-                .edge_weight(
-                    self.connections
-                        .find_edge(cycle[i as usize], cycle[i as usize + 1])
-                        .unwrap(),
-                )
+                .edge_weight(self.connections.find_edge(cycle[i], cycle[i + 1]).unwrap())
                 .unwrap();
-            fields_indexes[i as usize].push(*weight);
-            fields_indexes[i as usize + 1].push(*weight);
+            fields_indexes[i].push(*weight);
+            fields_indexes[i + 1].push(*weight);
         }
         fields_indexes[cycle.first().unwrap().index()].push(turn);
         fields_indexes[cycle.last().unwrap().index()].push(turn);
-        Some(Cycle::new(fields_coordinates, fields_indexes))
+        Cycle::new(fields_coordinates, fields_indexes)
     }
 }
 

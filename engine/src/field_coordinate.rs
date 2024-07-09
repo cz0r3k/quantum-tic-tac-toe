@@ -7,7 +7,7 @@ pub struct FieldCoordinate {
 }
 
 impl FieldCoordinate {
-    pub fn into_usize(&self, size: usize) -> usize {
+    pub fn into_usize(self, size: usize) -> usize {
         self.y * size + self.x
     }
 

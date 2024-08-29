@@ -9,7 +9,7 @@ fn wrong_player_turn() {
         field2: FieldCoordinate { x: 1, y: 0 },
     };
 
-    let result = game.player_move(player_move, PlayerSymbol::Y).unwrap_err();
+    let result = game.player_move(player_move, PlayerSymbol::O).unwrap_err();
     assert_eq!(result.current_context(), &GameError::PlayerTurnError);
 }
 

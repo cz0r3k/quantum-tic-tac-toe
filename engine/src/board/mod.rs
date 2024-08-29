@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::iter;
-use std::iter::zip;
+use std::iter::{zip, Peekable};
 
 use array2d::Array2D;
 use error_stack::{Report, Result};
@@ -11,6 +11,7 @@ use petgraph::visit::NodeIndexable;
 use petgraph::{Graph, Undirected};
 
 use crate::board::board_error::BoardError;
+use crate::board::lines_result::LinesResult;
 use crate::cycle::Cycle;
 use crate::field::Field;
 use crate::field_coordinate::FieldCoordinate;
@@ -143,8 +144,91 @@ impl Board {
         fields_indexes[cycle.last().unwrap().index()].push(turn);
         Cycle::new(fields_coordinates, fields_indexes)
     }
+
+    pub fn check_all_lines(&self) -> LinesResult {
+        let mut lines_result = LinesResult::new();
+        self.check_rows()
+            .iter()
+            .for_each(|&player_symbol| lines_result.increase(player_symbol));
+        self.check_columns()
+            .iter()
+            .for_each(|&player_symbol| lines_result.increase(player_symbol));
+        self.check_diagonals()
+            .iter()
+            .for_each(|&player_symbol| lines_result.increase(player_symbol));
+        lines_result
+    }
+
+    fn check_rows(&self) -> Vec<PlayerSymbol> {
+        (0..self.positions.row_len())
+            .filter_map(|row| self.check_row(row))
+            .collect::<Vec<PlayerSymbol>>()
+    }
+
+    fn check_columns(&self) -> Vec<PlayerSymbol> {
+        (0..self.positions.column_len())
+            .filter_map(|column| self.check_column(column))
+            .collect::<Vec<PlayerSymbol>>()
+    }
+
+    fn check_diagonals(&self) -> Vec<PlayerSymbol> {
+        let mut symbols = Vec::new();
+        if let Some(symbol) = self.check_first_diagonal() {
+            symbols.push(symbol);
+        }
+        if let Some(symbol) = self.check_second_diagonal() {
+            symbols.push(symbol);
+        }
+        symbols
+    }
+
+    fn check_row(&self, row: usize) -> Option<PlayerSymbol> {
+        let iter = self
+            .positions
+            .row_iter(row)
+            .expect("Row number is invalid")
+            .peekable();
+        Board::check_line(iter)
+    }
+
+    fn check_column(&self, column: usize) -> Option<PlayerSymbol> {
+        let iter = self
+            .positions
+            .column_iter(column)
+            .expect("Column number is invalid")
+            .peekable();
+        Board::check_line(iter)
+    }
+
+    fn check_first_diagonal(&self) -> Option<PlayerSymbol> {
+        Board::check_line((0..self.size).map(|i| &self.positions[(i, i)]).peekable())
+    }
+
+    fn check_second_diagonal(&self) -> Option<PlayerSymbol> {
+        Board::check_line(
+            (0..self.size)
+                .map(|i| &self.positions[(i, self.size - i - 1)])
+                .peekable(),
+        )
+    }
+
+    fn check_line<'a, I>(mut line: Peekable<I>) -> Option<PlayerSymbol>
+    where
+        I: Iterator<Item = &'a Field>,
+    {
+        let first = *line.peek().expect("None item to peek");
+        if matches!(first, Field::Entangled(_)) {
+            return None;
+        } else if line.all(|field| field == first) {
+            if let Field::Collapsed(symbol) = first {
+                return Some(*symbol);
+            }
+        }
+        None
+    }
 }
 
 mod board_error;
+mod lines_result;
 #[cfg(test)]
 mod test;

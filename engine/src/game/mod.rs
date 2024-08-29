@@ -74,7 +74,12 @@ impl Game {
     }
 
     fn check_end(&self) -> (bool, Option<PlayerSymbol>) {
-        todo!()
+        let lines_result = self.board.check_all_lines();
+        if lines_result.is_full_line() {
+            (true, lines_result.get_winner())
+        } else {
+            (false, None)
+        }
     }
 }
 impl Default for Game {

@@ -7,7 +7,6 @@ use std::fmt::Formatter;
 pub struct BoardError {
     field_coordinate: FieldCoordinate,
 }
-
 impl BoardError {
     pub fn new(field_coordinate: FieldCoordinate) -> Self {
         BoardError { field_coordinate }

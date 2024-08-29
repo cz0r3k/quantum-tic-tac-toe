@@ -5,15 +5,15 @@ use std::fmt::Formatter;
 #[derive(Copy, Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub enum PlayerSymbol {
     X,
-    Y,
+    O,
 }
 
 impl PlayerSymbol {
     #[allow(clippy::must_use_candidate)]
     pub fn opposite_symbol(player_symbol: PlayerSymbol) -> PlayerSymbol {
         match player_symbol {
-            PlayerSymbol::Y => PlayerSymbol::X,
-            PlayerSymbol::X => PlayerSymbol::Y,
+            PlayerSymbol::O => PlayerSymbol::X,
+            PlayerSymbol::X => PlayerSymbol::O,
         }
     }
 }
@@ -22,7 +22,7 @@ impl fmt::Display for PlayerSymbol {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             PlayerSymbol::X => write!(f, "X"),
-            PlayerSymbol::Y => write!(f, "Y"),
+            PlayerSymbol::O => write!(f, "O"),
         }
     }
 }

@@ -93,7 +93,7 @@ fn check_simple_cycle() {
     ];
     let _ = board.mark(fields_coordinates, PlayerSymbol::X, 0);
     assert!(board
-        .mark(fields_coordinates, PlayerSymbol::Y, 1)
+        .mark(fields_coordinates, PlayerSymbol::O, 1)
         .unwrap()
         .is_some());
 }
@@ -112,8 +112,101 @@ fn simply_cycle() {
     ));
     assert_eq!(
         cycle,
-        board.mark(fields_coordinates, PlayerSymbol::Y, 1).unwrap()
+        board.mark(fields_coordinates, PlayerSymbol::O, 1).unwrap()
     );
+}
+
+#[test]
+fn check_row_none() {
+    let board = Board::new(3);
+    for i in 0..3 {
+        assert!(board.check_row(i).is_none());
+    }
+}
+
+#[test]
+fn check_column_none() {
+    let board = Board::new(3);
+    for i in 0..3 {
+        assert!(board.check_column(i).is_none());
+    }
+}
+
+#[test]
+fn check_row() {
+    let mut board = Board::new(3);
+    let mut board_positions = vec![
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Collapsed(PlayerSymbol::X),
+    ];
+    board_positions.extend(vec![Field::Entangled(vec![None; 3 * 3]); 6]);
+    let board_positions = Array2D::from_row_major(&board_positions, 3, 3).unwrap();
+    board.positions = board_positions;
+    assert_eq!(board.check_row(0).unwrap(), PlayerSymbol::X);
+    assert!(board.check_row(1).is_none());
+    assert!(board.check_row(2).is_none());
+}
+
+#[test]
+fn check_column() {
+    let mut board = Board::new(3);
+    let board_positions = vec![
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Entangled(vec![None; 3 * 3]),
+    ];
+    let board_positions = Array2D::from_row_major(&board_positions, 3, 3).unwrap();
+    board.positions = board_positions;
+    assert_eq!(board.check_column(0).unwrap(), PlayerSymbol::X);
+    assert!(board.check_column(1).is_none());
+    assert!(board.check_column(2).is_none());
+}
+
+#[test]
+fn check_first_diagonal() {
+    let mut board = Board::new(3);
+    let board_positions = vec![
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Collapsed(PlayerSymbol::X),
+    ];
+    let board_positions = Array2D::from_row_major(&board_positions, 3, 3).unwrap();
+    board.positions = board_positions;
+    assert_eq!(board.check_first_diagonal().unwrap(), PlayerSymbol::X);
+    assert!(board.check_second_diagonal().is_none());
+}
+
+#[test]
+fn check_second_diagonal() {
+    let mut board = Board::new(3);
+    let board_positions = vec![
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Entangled(vec![None; 3 * 3]),
+        Field::Entangled(vec![None; 3 * 3]),
+    ];
+    let board_positions = Array2D::from_row_major(&board_positions, 3, 3).unwrap();
+    board.positions = board_positions;
+    assert_eq!(board.check_second_diagonal().unwrap(), PlayerSymbol::X);
+    assert!(board.check_first_diagonal().is_none());
 }
 
 #[test]
@@ -125,12 +218,12 @@ fn simply_collapsed_positions() {
         FieldCoordinate { x: 1, y: 0 },
     ];
     let _ = board.mark(fields_coordinates, PlayerSymbol::X, 0);
-    let _ = board.mark(fields_coordinates, PlayerSymbol::Y, 1);
+    let _ = board.mark(fields_coordinates, PlayerSymbol::O, 1);
     let _ = board.collapse(FieldCoordinate { x: 0, y: 0 }, 0);
 
     let mut board_positions = vec![
         Field::Collapsed(PlayerSymbol::X),
-        Field::Collapsed(PlayerSymbol::Y),
+        Field::Collapsed(PlayerSymbol::O),
     ];
     board_positions.extend(vec![Field::Entangled(vec![None; 3 * 3]); 7]);
     let board_positions = Array2D::from_row_major(&board_positions, 3, 3).unwrap();
@@ -146,7 +239,7 @@ fn simply_collapsed_connections() {
         FieldCoordinate { x: 1, y: 0 },
     ];
     let _ = board.mark(fields_coordinates, PlayerSymbol::X, 0);
-    let _ = board.mark(fields_coordinates, PlayerSymbol::Y, 1);
+    let _ = board.mark(fields_coordinates, PlayerSymbol::O, 1);
     let _ = board.collapse(FieldCoordinate { x: 0, y: 0 }, 0);
     let connections: Graph<(), usize, Undirected> =
         Graph::from_elements(iter::repeat_n(Element::Node { weight: () }, 3 * 3));

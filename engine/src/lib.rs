@@ -1,4 +1,3 @@
-#![feature(iter_repeat_n)]
 #![feature(iterator_try_collect)]
 
 const DEFAULT_BOARD_SIZE: usize = 3;

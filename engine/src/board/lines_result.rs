@@ -5,6 +5,12 @@ pub struct LinesResult {
     o: usize,
 }
 
+impl Default for LinesResult {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LinesResult {
     pub fn new() -> LinesResult {
         LinesResult { x: 0, o: 0 }

@@ -7,6 +7,7 @@ use crate::game_status::GameStatus;
 use crate::player_move::Move;
 use crate::player_symbol::PlayerSymbol;
 
+#[derive(Default)]
 pub struct Game {
     board: Board,
     game_status: GameStatus,
@@ -73,20 +74,22 @@ impl Game {
         }
     }
 
+    #[must_use]
+    pub fn get_status(&self) -> &GameStatus {
+        &self.game_status
+    }
+
+    #[must_use]
+    pub fn get_board(&self) -> &Board {
+        &self.board
+    }
+
     fn check_end(&self) -> (bool, Option<PlayerSymbol>) {
         let lines_result = self.board.check_all_lines();
         if lines_result.is_full_line() {
             (true, lines_result.get_winner())
         } else {
             (false, None)
-        }
-    }
-}
-impl Default for Game {
-    fn default() -> Self {
-        Game {
-            board: Board::default(),
-            game_status: GameStatus::new(),
         }
     }
 }

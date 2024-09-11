@@ -51,6 +51,7 @@ impl Board {
         turn: usize,
     ) -> Result<Option<Cycle>, BoardError> {
         let mut hash_set = HashSet::<FieldCoordinate>::new();
+        // Check for errors
         let mut fields = fields_coordinates
             .iter()
             .map(|&field_coordinate| {
@@ -64,7 +65,7 @@ impl Board {
                     Some(field) => {
                         if !matches!(field, &Field::Entangled(_)) {
                             return Err(Report::new(BoardError::new(field_coordinate))
-                                .attach_printable("Filed is already entangled"));
+                                .attach_printable("Field is already entangled"));
                         }
                         Ok(field.clone())
                     }
@@ -74,6 +75,7 @@ impl Board {
             })
             .try_collect::<Vec<Field>>()?;
 
+        // zip fields_coordinates with fields
         zip(
             fields.iter_mut().filter_map(|field| match field {
                 Field::Entangled(value) => {
@@ -98,6 +100,7 @@ impl Board {
             })
             .collect::<Vec<_>>();
 
+        // Check for cycle
         let path = astar(
             &self.connections,
             nodes[0],
@@ -114,18 +117,127 @@ impl Board {
         }
     }
 
-    #[allow(unused)]
     pub fn collapse(
         &mut self,
         field_coordinate: FieldCoordinate,
         index: usize,
     ) -> Result<(), BoardError> {
-        todo!()
+        // Check for errors
+        let mut last_cycle = match &self.last_cycle {
+            Some(cycle) => cycle.clone(),
+            None => {
+                return Err(Report::new(BoardError::new(field_coordinate))
+                    .attach_printable("No cycle found"))
+            }
+        };
+        let Some(n) = last_cycle
+            .get_fields_coordinate()
+            .iter()
+            .position(|&coordinate| coordinate == field_coordinate)
+        else {
+            return Err(Report::new(BoardError::new(field_coordinate))
+                .attach_printable("No coordinate found in cycle"));
+        };
+        if !last_cycle.get_fields_indexes()[n].contains(&index) {
+            return Err(Report::new(BoardError::new(field_coordinate))
+                .attach_printable("No index found in coordinate"));
+        }
+
+        //Collapse cycle
+        last_cycle.shift(n);
+        let mut last_edge_weight = index;
+        let mut last_field_coordinate = field_coordinate;
+        let cycle_len = last_cycle.len();
+
+        for i in 0..cycle_len {
+            last_edge_weight = last_cycle.remove((i + 1) % cycle_len, last_edge_weight);
+            let field_coordinate = last_cycle.get_field_coordinate((i + 1) % cycle_len);
+            let player_symbol =
+                self.get_player_symbol_from_entangled(field_coordinate, last_edge_weight)?;
+            self.set_collapse(field_coordinate, player_symbol);
+            self.remove_edge(field_coordinate, &last_field_coordinate);
+            last_field_coordinate = *field_coordinate;
+        }
+
+        //Collapse outside cycle
+        let mut nodes_indexes = last_cycle
+            .get_fields_coordinate()
+            .iter()
+            .map(|coordinate| self.get_node(coordinate))
+            .collect::<Vec<_>>();
+
+        while let Some(node) = nodes_indexes.pop() {
+            let neighbors = self.connections.neighbors(node);
+            let mut edges = Vec::new();
+            let mut to_collapse = Vec::new();
+            for neighbor in neighbors {
+                nodes_indexes.push(neighbor);
+                let field_coordinate = FieldCoordinate::from_usize(neighbor.index(), self.size);
+                if let Some(edge) = self.connections.find_edge(node, neighbor) {
+                    edges.push(edge);
+                    let player_symbol = self.get_player_symbol_from_entangled(
+                        &field_coordinate,
+                        *self.connections.edge_weight(edge).unwrap(),
+                    )?;
+                    to_collapse.push((field_coordinate, player_symbol));
+                }
+            }
+            for (field_coordinate, player_symbol) in to_collapse {
+                self.set_collapse(&field_coordinate, player_symbol);
+            }
+            for edge in edges {
+                self.connections.remove_edge(edge);
+            }
+        }
+        Ok(())
     }
-    #[allow(clippy::cast_sign_loss)]
-    fn map_cycle(&self, cycle: Option<(i32, Vec<NodeIndex>)>, turn: usize) -> Cycle {
+
+    fn get_player_symbol_from_entangled(
+        &self,
+        field_coordinate: &FieldCoordinate,
+        index: usize,
+    ) -> Result<PlayerSymbol, BoardError> {
+        match self
+            .positions
+            .get(field_coordinate.y, field_coordinate.x)
+            .unwrap()
+        {
+            Field::Entangled(symbols) => Ok(symbols[index].unwrap()),
+            Field::Collapsed(_) => Err(Report::new(BoardError::new(*field_coordinate))
+                .attach_printable("Field is collapsed")),
+        }
+    }
+
+    fn set_collapse(&mut self, field_coordinate: &FieldCoordinate, player_symbol: PlayerSymbol) {
+        self.positions
+            .set(
+                field_coordinate.y,
+                field_coordinate.x,
+                Field::Collapsed(player_symbol),
+            )
+            .unwrap();
+    }
+
+    fn remove_edge(
+        &mut self,
+        first_coordinate: &FieldCoordinate,
+        second_coordinate: &FieldCoordinate,
+    ) {
+        if let Some(edge) = self.connections.find_edge(
+            self.get_node(first_coordinate),
+            self.get_node(second_coordinate),
+        ) {
+            self.connections.remove_edge(edge);
+        };
+    }
+
+    fn get_node(&self, field_coordinate: &FieldCoordinate) -> NodeIndex {
+        self.connections
+            .from_index(FieldCoordinate::into_usize(*field_coordinate, self.size))
+    }
+    fn map_cycle(&self, cycle: Option<(usize, Vec<NodeIndex>)>, turn: usize) -> Cycle {
         let cycle = cycle.unwrap();
-        let cycle_size = cycle.0 as usize;
+        let cycle_size = cycle.0;
         let cycle = cycle.1;
         let mut fields_indexes = vec![Vec::<usize>::new(); cycle_size + 1];
         let fields_coordinates = cycle
@@ -140,8 +252,8 @@ impl Board {
             fields_indexes[i].push(*weight);
             fields_indexes[i + 1].push(*weight);
         }
-        fields_indexes[cycle.first().unwrap().index()].push(turn);
-        fields_indexes[cycle.last().unwrap().index()].push(turn);
+        fields_indexes[0].push(turn);
+        fields_indexes[cycle_size].push(turn);
         Cycle::new(fields_coordinates, fields_indexes)
     }
 

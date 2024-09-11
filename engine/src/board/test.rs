@@ -210,7 +210,6 @@ fn check_second_diagonal() {
 }
 
 #[test]
-#[ignore]
 fn simply_collapsed_positions() {
     let mut board = Board::new(3);
     let fields_coordinates = &[
@@ -231,7 +230,6 @@ fn simply_collapsed_positions() {
 }
 
 #[test]
-#[ignore]
 fn simply_collapsed_connections() {
     let mut board = Board::new(3);
     let fields_coordinates = &[
@@ -241,6 +239,35 @@ fn simply_collapsed_connections() {
     let _ = board.mark(fields_coordinates, PlayerSymbol::X, 0);
     let _ = board.mark(fields_coordinates, PlayerSymbol::O, 1);
     let _ = board.collapse(FieldCoordinate { x: 0, y: 0 }, 0);
+    let connections: Graph<(), usize, Undirected> =
+        Graph::from_elements(iter::repeat_n(Element::Node { weight: () }, 3 * 3));
+    assert_eq!(connections.edge_count(), board.connections.edge_count());
+}
+
+#[test]
+fn simply_collapsed_with_additional_edge() {
+    let mut board = Board::new(3);
+    let fields_coordinates1 = &[
+        FieldCoordinate { x: 0, y: 0 },
+        FieldCoordinate { x: 2, y: 0 },
+    ];
+    let fields_coordinates2 = &[
+        FieldCoordinate { x: 0, y: 0 },
+        FieldCoordinate { x: 1, y: 0 },
+    ];
+    let _ = board.mark(fields_coordinates1, PlayerSymbol::X, 0);
+    let _ = board.mark(fields_coordinates2, PlayerSymbol::O, 1);
+    let _ = board.mark(fields_coordinates2, PlayerSymbol::X, 2);
+    let _ = board.collapse(FieldCoordinate { x: 0, y: 0 }, 2);
+
+    let mut board_positions = vec![
+        Field::Collapsed(PlayerSymbol::X),
+        Field::Collapsed(PlayerSymbol::O),
+        Field::Collapsed(PlayerSymbol::X),
+    ];
+    board_positions.extend(vec![Field::Entangled(vec![None; 3 * 3]); 6]);
+    let board_positions = Array2D::from_row_major(&board_positions, 3, 3).unwrap();
+    assert_eq!(board.positions, board_positions);
     let connections: Graph<(), usize, Undirected> =
         Graph::from_elements(iter::repeat_n(Element::Node { weight: () }, 3 * 3));
     assert_eq!(connections.edge_count(), board.connections.edge_count());

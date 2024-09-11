@@ -10,6 +10,12 @@ pub struct GameStatus {
     winner: Option<PlayerSymbol>,
 }
 
+impl Default for GameStatus {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GameStatus {
     pub fn new() -> Self {
         GameStatus {

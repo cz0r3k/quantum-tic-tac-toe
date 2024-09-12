@@ -1,7 +1,9 @@
 use crate::move_type::MoveType;
 use crate::player_move::Move;
 use crate::player_symbol::PlayerSymbol;
+use serde::Serialize;
 
+#[derive(Serialize)]
 pub struct GameStatus {
     turn: usize,
     player_turn: PlayerSymbol,

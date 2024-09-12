@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0.210", features = ["derive"] }
 petgraph = "0.6.5"
-array2d = "0.3.2"
+array2d = { version = "0.3.2", features = ["serde"] }
 error-stack = "0.5.0"

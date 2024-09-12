@@ -2,14 +2,6 @@ use std::collections::HashSet;
 use std::iter;
 use std::iter::{zip, Peekable};
 
-use array2d::Array2D;
-use error_stack::{Report, Result};
-use petgraph::algo::astar;
-use petgraph::data::{Element, FromElements};
-use petgraph::stable_graph::NodeIndex;
-use petgraph::visit::NodeIndexable;
-use petgraph::{Graph, Undirected};
-
 use crate::board::board_error::BoardError;
 use crate::board::lines_result::LinesResult;
 use crate::cycle::Cycle;
@@ -17,11 +9,22 @@ use crate::field::Field;
 use crate::field_coordinate::FieldCoordinate;
 use crate::player_symbol::PlayerSymbol;
 use crate::DEFAULT_BOARD_SIZE;
+use array2d::Array2D;
+use error_stack::{Report, Result};
+use petgraph::algo::astar;
+use petgraph::data::{Element, FromElements};
+use petgraph::stable_graph::NodeIndex;
+use petgraph::visit::NodeIndexable;
+use petgraph::{Graph, Undirected};
+use serde::Serialize;
 
+#[derive(Serialize)]
 pub struct Board {
     size: usize,
     positions: Array2D<Field>,
+    #[serde(skip)]
     connections: Graph<(), usize, Undirected>,
+    #[serde(skip)]
     last_cycle: Option<Cycle>,
 }
 
@@ -89,7 +92,7 @@ impl Board {
         .for_each(|(field, &field_coordinate)| {
             self.positions
                 .set(field_coordinate.y, field_coordinate.x, field)
-                .unwrap();
+                .expect("Coordinates should be valid");
         });
 
         let nodes = fields_coordinates
@@ -168,25 +171,25 @@ impl Board {
 
         while let Some(node) = nodes_indexes.pop() {
             let neighbors = self.connections.neighbors(node);
-            let mut edges = Vec::new();
+            let node_coordinate = FieldCoordinate::from_usize(node.index(), self.size);
             let mut to_collapse = Vec::new();
             for neighbor in neighbors {
                 nodes_indexes.push(neighbor);
-                let field_coordinate = FieldCoordinate::from_usize(neighbor.index(), self.size);
+                let neighbor_coordinate = FieldCoordinate::from_usize(neighbor.index(), self.size);
                 if let Some(edge) = self.connections.find_edge(node, neighbor) {
-                    edges.push(edge);
                     let player_symbol = self.get_player_symbol_from_entangled(
-                        &field_coordinate,
-                        *self.connections.edge_weight(edge).unwrap(),
+                        &neighbor_coordinate,
+                        *self
+                            .connections
+                            .edge_weight(edge)
+                            .expect("Edge should exist"),
                     )?;
-                    to_collapse.push((field_coordinate, player_symbol));
+                    to_collapse.push((neighbor_coordinate, player_symbol));
                 }
             }
-            for (field_coordinate, player_symbol) in to_collapse {
-                self.set_collapse(&field_coordinate, player_symbol);
-            }
-            for edge in edges {
-                self.connections.remove_edge(edge);
+            for (neighbor_coordinate, player_symbol) in to_collapse {
+                self.set_collapse(&neighbor_coordinate, player_symbol);
+                self.remove_edge(&node_coordinate, &neighbor_coordinate);
             }
         }
         Ok(())
@@ -200,9 +203,9 @@ impl Board {
         match self
             .positions
             .get(field_coordinate.y, field_coordinate.x)
-            .unwrap()
+            .expect("Coordinate should be valid")
         {
-            Field::Entangled(symbols) => Ok(symbols[index].unwrap()),
+            Field::Entangled(symbols) => Ok(symbols[index].expect("Index should be valid")),
             Field::Collapsed(_) => Err(Report::new(BoardError::new(*field_coordinate))
                 .attach_printable("Field is collapsed")),
         }
@@ -215,7 +218,7 @@ impl Board {
                 field_coordinate.x,
                 Field::Collapsed(player_symbol),
             )
-            .unwrap();
+            .expect("Coordinate should be valid");
     }
 
     fn remove_edge(
@@ -236,7 +239,7 @@ impl Board {
             .from_index(FieldCoordinate::into_usize(*field_coordinate, self.size))
     }
     fn map_cycle(&self, cycle: Option<(usize, Vec<NodeIndex>)>, turn: usize) -> Cycle {
-        let cycle = cycle.unwrap();
+        let cycle = cycle.expect("Cycle should exist");
         let cycle_size = cycle.0;
         let cycle = cycle.1;
         let mut fields_indexes = vec![Vec::<usize>::new(); cycle_size + 1];
@@ -247,8 +250,12 @@ impl Board {
         for i in 0..cycle_size {
             let weight = self
                 .connections
-                .edge_weight(self.connections.find_edge(cycle[i], cycle[i + 1]).unwrap())
-                .unwrap();
+                .edge_weight(
+                    self.connections
+                        .find_edge(cycle[i], cycle[i + 1])
+                        .expect("Edge should exist"),
+                )
+                .expect("Edge should exist");
             fields_indexes[i].push(*weight);
             fields_indexes[i + 1].push(*weight);
         }
@@ -298,7 +305,7 @@ impl Board {
         let iter = self
             .positions
             .row_iter(row)
-            .expect("Row number is invalid")
+            .expect("Row number should be valid")
             .peekable();
         Board::check_line(iter)
     }
@@ -307,7 +314,7 @@ impl Board {
         let iter = self
             .positions
             .column_iter(column)
-            .expect("Column number is invalid")
+            .expect("Column number should be valid")
             .peekable();
         Board::check_line(iter)
     }
@@ -328,7 +335,7 @@ impl Board {
     where
         I: Iterator<Item = &'a Field>,
     {
-        let first = *line.peek().expect("None item to peek");
+        let first = *line.peek().expect("Should bo item to pick");
         if matches!(first, Field::Entangled(_)) {
             return None;
         } else if line.all(|field| field == first) {

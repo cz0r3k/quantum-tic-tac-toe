@@ -84,6 +84,16 @@ impl Game {
         &self.board
     }
 
+    /// Use this function if you want to end the game regardless of your position on the board
+    ///
+    /// # Errors
+    ///
+    /// Function will not return errors
+    pub fn end_game(&mut self, winner: Option<PlayerSymbol>) -> Result<GameResult, GameError> {
+        self.game_status.set_end(winner);
+        Ok(GameResult::GameEnd(winner))
+    }
+
     fn check_end(&self) -> (bool, Option<PlayerSymbol>) {
         let lines_result = self.board.check_all_lines();
         if lines_result.is_full_line() {

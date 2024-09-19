@@ -2,5 +2,5 @@
 
 resolver = "2"
 
-members = [ "engine", "server",
+members = [ "engine", "ipc", "server", "test_server",
 ]

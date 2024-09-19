@@ -7,7 +7,6 @@ use std::fmt::Formatter;
 pub enum ServerError {
     RedisError,
     TCPError,
-    TCPWouldBlockError,
     SerializationError,
 }
 

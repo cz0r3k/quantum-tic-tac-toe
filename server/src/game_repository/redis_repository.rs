@@ -11,7 +11,7 @@ pub struct RedisRepository {
 
 impl RedisRepository {
     pub fn new(connection_string: &str) -> Self {
-        RedisRepository {
+        Self {
             connection_string: connection_string.to_string(),
             connection: None,
         }

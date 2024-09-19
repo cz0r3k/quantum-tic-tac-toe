@@ -1,4 +1,4 @@
-mod local_repository;
+pub mod local_repository;
 pub mod redis_repository;
 
 use uuid::Uuid;

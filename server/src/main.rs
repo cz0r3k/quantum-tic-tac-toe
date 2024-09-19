@@ -59,11 +59,12 @@ async fn main() {
             .change_context(ServerError::TCPError)
             .attach_printable("Failed to accept a socket")
         {
-            Ok((socket, socket_address)) => {
+            Ok((mut socket, socket_address)) => {
                 let game_repository_redis = game_repository_redis.clone();
                 tokio::spawn(async move {
                     info!("Accept new connection from: {socket_address}");
-                    process(socket, game_repository_redis).await;
+                    let (reader, writer) = socket.split();
+                    process(reader, writer, game_repository_redis).await;
                 });
             }
             Err(err) => {

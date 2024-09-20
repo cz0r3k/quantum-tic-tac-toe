@@ -1,9 +1,11 @@
 use crate::game_repository::GameRepository;
 use crate::server_error::ServerError;
+use async_trait::async_trait;
 use error_stack::ResultExt;
 use redis::AsyncCommands;
 use uuid::Uuid;
 
+#[derive(Debug)]
 pub struct RedisRepository {
     connection_string: String,
     connection: Option<redis::aio::MultiplexedConnection>,
@@ -31,6 +33,7 @@ impl RedisRepository {
     }
 }
 
+#[async_trait]
 impl GameRepository for RedisRepository {
     async fn add_game(&mut self, uuid: Uuid) -> bool {
         match self.connection {

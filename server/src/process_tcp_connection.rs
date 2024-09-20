@@ -10,14 +10,16 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
+const BUFFER_SIZE: usize = 1024;
+
 pub async fn process<
-    Repository: GameRepository,
+    Repository: GameRepository + ?Sized,
     Reader: AsyncRead + Unpin,
     Writer: AsyncWrite + Unpin,
 >(
     mut reader: Reader,
     mut writer: Writer,
-    game_repository: Arc<Mutex<Repository>>,
+    game_repository: Arc<Mutex<Box<Repository>>>,
 ) {
     let mut game_manager: Option<GameManager> = None;
     loop {
@@ -57,7 +59,7 @@ pub async fn process<
 async fn read_message<Reader: AsyncRead + Unpin>(
     mut reader: Reader,
 ) -> Result<ToServer, ServerError> {
-    let mut buf = [0; 1024];
+    let mut buf = [0; BUFFER_SIZE];
     let n = reader
         .read(&mut buf)
         .await
@@ -89,9 +91,9 @@ async fn write_message<Writer: AsyncWrite + Unpin>(
     Ok(())
 }
 
-async fn create_new_game<Repository: GameRepository>(
+async fn create_new_game<Repository: GameRepository + ?Sized>(
     size: usize,
-    game_repository: Arc<Mutex<Repository>>,
+    game_repository: Arc<Mutex<Box<Repository>>>,
 ) -> (Option<GameManager>, Uuid) {
     #[cfg(test)]
     let mut uuid = Uuid::nil();
@@ -110,7 +112,7 @@ mod test {
 
     #[tokio::test]
     async fn create_new_game() {
-        let repository = Arc::new(Mutex::new(LocalRepository::new()));
+        let repository = Arc::new(Mutex::new(Box::new(LocalRepository::new())));
         let reader = tokio_test::io::Builder::new()
             .read(&bincode::serialize(&ToServer::CreateGame).unwrap())
             .build();

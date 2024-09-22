@@ -3,6 +3,6 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum FromServer {
-    Test,
+    PONG,
     GameCreated(Uuid),
 }

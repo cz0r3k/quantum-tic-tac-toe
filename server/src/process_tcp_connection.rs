@@ -3,6 +3,7 @@ use crate::game_repository::GameRepository;
 use crate::server_error::ServerError;
 use error_stack::{Result, ResultExt};
 use ipc::from_server::FromServer;
+use ipc::game_configuration::GameConfiguration;
 use ipc::to_server::ToServer;
 use log::{error, info};
 use std::sync::Arc;
@@ -25,13 +26,14 @@ pub async fn process<
     loop {
         match read_message(&mut reader).await {
             Ok(message) => match message {
-                ToServer::CreateGame => {
+                ToServer::CreateGame(game_configuration) => {
                     if game_manager.is_some() {
                         error!("Game is already created");
                         continue;
                     }
+                    info!("{game_configuration:?}");
                     let (game_manager_created, uuid) =
-                        create_new_game(3, game_repository.clone()).await;
+                        create_new_game(game_configuration, game_repository.clone()).await;
                     game_manager = game_manager_created;
                     info!("Game created: {uuid}",);
                     if let Err(e) = write_message(&mut writer, &FromServer::GameCreated(uuid)).await
@@ -40,8 +42,12 @@ pub async fn process<
                         break;
                     }
                 }
-                ToServer::Test => {
-                    info!("test");
+                ToServer::PING => {
+                    info!("ping");
+                    if let Err(e) = write_message(&mut writer, &FromServer::PONG).await {
+                        error!("error writing to socket: {:?}", e);
+                        break;
+                    }
                 }
                 ToServer::EndConnection => {
                     info!("connection is closed");
@@ -54,6 +60,20 @@ pub async fn process<
             }
         }
     }
+}
+
+async fn create_new_game<Repository: GameRepository + ?Sized>(
+    game_configuration: GameConfiguration,
+    game_repository: Arc<Mutex<Box<Repository>>>,
+) -> (Option<GameManager>, Uuid) {
+    #[cfg(test)]
+    let mut uuid = Uuid::nil();
+    #[cfg(not(test))]
+    let mut uuid = Uuid::new_v4();
+    while !game_repository.lock().await.add_game(uuid).await {
+        uuid = Uuid::new_v4();
+    }
+    (Some(GameManager::new(uuid, &game_configuration)), uuid)
 }
 
 async fn read_message<Reader: AsyncRead + Unpin>(
@@ -91,20 +111,6 @@ async fn write_message<Writer: AsyncWrite + Unpin>(
     Ok(())
 }
 
-async fn create_new_game<Repository: GameRepository + ?Sized>(
-    size: usize,
-    game_repository: Arc<Mutex<Box<Repository>>>,
-) -> (Option<GameManager>, Uuid) {
-    #[cfg(test)]
-    let mut uuid = Uuid::nil();
-    #[cfg(not(test))]
-    let mut uuid = Uuid::new_v4();
-    while !game_repository.lock().await.add_game(uuid).await {
-        uuid = Uuid::new_v4();
-    }
-    (Some(GameManager::new(uuid, size)), uuid)
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -112,9 +118,10 @@ mod test {
 
     #[tokio::test]
     async fn create_new_game() {
+        let game_configuration = GameConfiguration::default();
         let repository = Arc::new(Mutex::new(Box::new(LocalRepository::new())));
         let reader = tokio_test::io::Builder::new()
-            .read(&bincode::serialize(&ToServer::CreateGame).unwrap())
+            .read(&bincode::serialize(&ToServer::CreateGame(game_configuration)).unwrap())
             .build();
         let writer = tokio_test::io::Builder::new()
             .write(&bincode::serialize(&FromServer::GameCreated(Uuid::nil())).unwrap())

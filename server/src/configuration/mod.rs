@@ -121,15 +121,15 @@ impl Configuration {
     fn get_game_repository(cli: &Cli) -> GameRepositoryEnum {
         match Self::get_repository(cli) {
             Repository::Local => GameRepositoryEnum::Local,
-            Repository::Redis => {
-                GameRepositoryEnum::Redis(if let Some(redis_string) = &cli.redis_connection_string {
+            Repository::Redis => GameRepositoryEnum::Redis(
+                if let Some(redis_string) = &cli.redis_connection_string {
                     redis_string.to_string()
                 } else if let Ok(redis_string) = env::var("REDIS_CONNECTION_STRING") {
                     redis_string
                 } else {
                     DEFAULT_REDIS_CONNECTION_STRING.to_string()
-                })
-            }
+                },
+            ),
         }
     }
 }

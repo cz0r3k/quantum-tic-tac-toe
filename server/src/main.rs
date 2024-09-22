@@ -3,7 +3,6 @@
 mod configuration;
 mod game_manager;
 mod game_repository;
-mod player_enum;
 mod process_tcp_connection;
 mod server_error;
 mod timer;
@@ -26,8 +25,8 @@ async fn main() {
 
     let game_repository = match configuration.create_game_repository().await {
         Ok(game_repository) => game_repository,
-        Err(e) => {
-            error!("{:?}", e);
+        Err(err) => {
+            error!("{:?}", err);
             process::exit(1);
         }
     };
@@ -65,7 +64,7 @@ async fn main() {
                 });
             }
             Err(err) => {
-                error!("\n{:?}", err);
+                error!("{:?}", err);
             }
         }
     }

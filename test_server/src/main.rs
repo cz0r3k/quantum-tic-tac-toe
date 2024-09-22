@@ -1,4 +1,5 @@
 use ipc::from_server::FromServer;
+use ipc::game_configuration::GameConfiguration;
 use ipc::to_server::ToServer;
 use std::error::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -9,7 +10,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Connect to a server
     let mut stream = TcpStream::connect("127.0.0.1:6379").await?;
 
-    let encode = bincode::serialize(&ToServer::CreateGame).unwrap();
+    let game_configuration = GameConfiguration::default();
+    let encode = bincode::serialize(&ToServer::CreateGame(game_configuration)).unwrap();
     stream.write_all(&encode).await?;
     let mut buf = vec![0; 1024];
     let n = stream.read(&mut buf).await?;

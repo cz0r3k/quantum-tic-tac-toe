@@ -6,4 +6,5 @@ pub enum ToServer {
     CreateGame(GameConfiguration),
     PING,
     EndConnection,
+    GetPlayerAssignment,
 }

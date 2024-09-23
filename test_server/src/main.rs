@@ -7,13 +7,27 @@ use tokio::net::TcpStream;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    let mut buf = vec![0; 1024];
     // Connect to a server
     let mut stream = TcpStream::connect("127.0.0.1:6379").await?;
 
     let game_configuration = GameConfiguration::default();
+    let encode = bincode::serialize(&ToServer::GetPlayerAssignment).unwrap();
+    stream.write_all(&encode).await?;
+    let n = stream.read(&mut buf).await?;
+    println!("{n} bytes read");
+    let decoded = bincode::deserialize::<FromServer>(&buf[..n])?;
+    println!("{decoded:?}");
+
     let encode = bincode::serialize(&ToServer::CreateGame(game_configuration)).unwrap();
     stream.write_all(&encode).await?;
-    let mut buf = vec![0; 1024];
+    let n = stream.read(&mut buf).await?;
+    println!("{n} bytes read");
+    let decoded = bincode::deserialize::<FromServer>(&buf[..n])?;
+    println!("{decoded:?}");
+
+    let encode = bincode::serialize(&ToServer::GetPlayerAssignment).unwrap();
+    stream.write_all(&encode).await?;
     let n = stream.read(&mut buf).await?;
     println!("{n} bytes read");
     let decoded = bincode::deserialize::<FromServer>(&buf[..n])?;

@@ -1,7 +1,7 @@
 use crate::timer::Timer;
 use engine::game::Game;
 use ipc::game_configuration::GameConfiguration;
-use ipc::player_enum::Player;
+use ipc::player_assignment::PlayerAssignment;
 use uuid::Uuid;
 
 #[allow(unused)]
@@ -9,7 +9,7 @@ pub struct GameManager {
     uuid: Uuid,
     game: Game,
     timer: Timer,
-    first_player: Player,
+    player_assignment: PlayerAssignment,
 }
 
 impl GameManager {
@@ -21,7 +21,11 @@ impl GameManager {
                 game_configuration.based_time(),
                 game_configuration.increment(),
             ),
-            first_player: *game_configuration.first_player(),
+            player_assignment: PlayerAssignment::new(*game_configuration.first_player()),
         }
+    }
+
+    pub fn player_assignment(&self) -> PlayerAssignment {
+        self.player_assignment
     }
 }

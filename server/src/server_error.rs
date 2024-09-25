@@ -8,6 +8,7 @@ pub enum ServerError {
     RedisError,
     TCPError,
     SerializationError,
+    GameError,
 }
 
 impl fmt::Display for ServerError {

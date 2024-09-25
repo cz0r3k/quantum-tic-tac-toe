@@ -1,4 +1,9 @@
-use error_stack::{Report, Result, ResultExt};
+#[allow(clippy::module_name_repetitions)]
+pub mod game_error;
+#[allow(clippy::module_name_repetitions)]
+pub mod game_result;
+#[cfg(test)]
+mod test;
 
 use crate::board::Board;
 use crate::game::game_error::GameError;
@@ -6,6 +11,8 @@ use crate::game::game_result::GameResult;
 use crate::game_status::GameStatus;
 use crate::player_move::Move;
 use crate::player_symbol::PlayerSymbol;
+
+use error_stack::{Report, Result, ResultExt};
 
 #[derive(Default)]
 pub struct Game {
@@ -103,8 +110,3 @@ impl Game {
         }
     }
 }
-
-mod game_error;
-mod game_result;
-#[cfg(test)]
-mod test;

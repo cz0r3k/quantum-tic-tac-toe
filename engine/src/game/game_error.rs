@@ -2,7 +2,7 @@ use core::fmt;
 use std::error::Error;
 use std::fmt::Formatter;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum GameError {
     PlayerTurnError,
     MoveTypeError,

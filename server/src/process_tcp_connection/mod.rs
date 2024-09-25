@@ -5,6 +5,7 @@ mod test;
 
 use crate::game_manager::GameManager;
 use crate::game_repository::GameRepository;
+use crate::process_tcp_connection::handle_message::check_is_game_created;
 use ipc::to_server::ToServer;
 use log::{error, info};
 use std::sync::Arc;
@@ -26,18 +27,15 @@ pub async fn process<
             Ok(message) => match message {
                 ToServer::CreateGame(game_configuration) => {
                     info!("Create game");
-                    game_manager = match handle_message::handle_create_game(
-                        game_manager,
+                    if let Err(err) = handle_message::handle_create_game(
+                        &mut game_manager,
                         game_configuration,
                         game_repository.clone(),
                         &mut writer,
                     )
                     .await
                     {
-                        Ok(game_manager) => game_manager,
-                        Err(err) => {
-                            break Err(err);
-                        }
+                        break Err(err);
                     }
                 }
                 ToServer::PING => {
@@ -52,12 +50,47 @@ pub async fn process<
                 }
                 ToServer::GetPlayerAssignment => {
                     info!("Get player assignment");
-                    if let Err(err) =
-                        handle_message::handle_get_player_assignment(&game_manager, &mut writer)
+                    match check_is_game_created(&game_manager, &mut writer).await {
+                        Ok(true) => {
+                            if let Err(err) = handle_message::handle_get_player_assignment(
+                                &game_manager,
+                                &mut writer,
+                            )
                             .await
-                    {
-                        break Err(err);
-                    };
+                            {
+                                break Err(err);
+                            };
+                        }
+                        Ok(false) => {
+                            continue;
+                        }
+                        Err(err) => {
+                            break Err(err);
+                        }
+                    }
+                }
+                ToServer::MakeMove((player_symbol, player_move)) => {
+                    info!("Player {player_symbol} move {player_move:?}");
+                    match check_is_game_created(&game_manager, &mut writer).await {
+                        Ok(true) => {
+                            if let Err(err) = handle_message::handle_make_move(
+                                &mut game_manager,
+                                &mut writer,
+                                player_symbol,
+                                player_move,
+                            )
+                            .await
+                            {
+                                break Err(err);
+                            }
+                        }
+                        Ok(false) => {
+                            continue;
+                        }
+                        Err(err) => {
+                            break Err(err);
+                        }
+                    }
                 }
             },
             Err(err) => {

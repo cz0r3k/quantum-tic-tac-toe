@@ -1,7 +1,7 @@
 use crate::field_coordinate::FieldCoordinate;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug, Copy, Clone)]
+#[derive(Deserialize, Serialize, Debug, Copy, Clone)]
 #[serde(tag = "type")]
 pub enum Move {
     Mark {

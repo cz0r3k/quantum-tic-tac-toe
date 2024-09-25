@@ -1,3 +1,8 @@
+mod board_error;
+mod lines_result;
+#[cfg(test)]
+mod test;
+
 use std::collections::HashSet;
 use std::iter;
 use std::iter::{zip, Peekable};
@@ -16,15 +21,12 @@ use petgraph::data::{Element, FromElements};
 use petgraph::stable_graph::NodeIndex;
 use petgraph::visit::NodeIndexable;
 use petgraph::{Graph, Undirected};
-use serde::Serialize;
 
-#[derive(Serialize)]
+#[derive(Debug, Clone)]
 pub struct Board {
     size: usize,
     positions: Array2D<Field>,
-    #[serde(skip)]
     connections: Graph<(), usize, Undirected>,
-    #[serde(skip)]
     last_cycle: Option<Cycle>,
 }
 
@@ -35,7 +37,7 @@ impl Default for Board {
 }
 
 impl Board {
-    pub fn new(size: usize) -> Board {
+    pub(super) fn new(size: usize) -> Board {
         Board {
             size,
             positions: Array2D::filled_with(Field::Entangled(vec![None; size * size]), size, size),
@@ -47,7 +49,12 @@ impl Board {
         }
     }
 
-    pub fn mark(
+    #[must_use]
+    pub fn get_positions(&self) -> Array2D<Field> {
+        self.positions.clone()
+    }
+
+    pub(super) fn mark(
         &mut self,
         fields_coordinates: &[FieldCoordinate],
         player_symbol: PlayerSymbol,
@@ -120,7 +127,7 @@ impl Board {
         }
     }
 
-    pub fn collapse(
+    pub(super) fn collapse(
         &mut self,
         field_coordinate: FieldCoordinate,
         index: usize,
@@ -264,7 +271,7 @@ impl Board {
         Cycle::new(fields_coordinates, fields_indexes)
     }
 
-    pub fn check_all_lines(&self) -> LinesResult {
+    pub(super) fn check_all_lines(&self) -> LinesResult {
         let mut lines_result = LinesResult::new();
         self.check_rows()
             .iter()
@@ -346,8 +353,3 @@ impl Board {
         None
     }
 }
-
-mod board_error;
-mod lines_result;
-#[cfg(test)]
-mod test;

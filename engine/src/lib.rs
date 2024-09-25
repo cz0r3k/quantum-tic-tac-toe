@@ -1,10 +1,10 @@
 #![feature(iterator_try_collect)]
 
-const DEFAULT_BOARD_SIZE: usize = 3;
+pub const DEFAULT_BOARD_SIZE: usize = 3;
 
-mod board;
-mod cycle;
-mod field;
+pub mod board;
+pub mod cycle;
+pub mod field;
 mod field_coordinate;
 pub mod game;
 mod game_status;

@@ -9,8 +9,7 @@ pub enum PlayerSymbol {
 }
 
 impl PlayerSymbol {
-    #[allow(clippy::must_use_candidate)]
-    pub fn opposite_symbol(player_symbol: PlayerSymbol) -> PlayerSymbol {
+    pub(super) fn opposite_symbol(player_symbol: PlayerSymbol) -> PlayerSymbol {
         match player_symbol {
             PlayerSymbol::O => PlayerSymbol::X,
             PlayerSymbol::X => PlayerSymbol::O,

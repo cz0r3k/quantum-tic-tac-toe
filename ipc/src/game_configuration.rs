@@ -8,7 +8,7 @@ const DEFAULT_GAME_SIZE: usize = 3;
 const DEFAULT_BASED_TIME: Duration = Duration::from_mins(5);
 const DEFAULT_INCREMENT: Duration = Duration::from_secs(1);
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct GameConfiguration {
     size: usize,
     based_time: Duration,

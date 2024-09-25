@@ -3,6 +3,7 @@ use crate::game_repository::GameRepository;
 use crate::process_tcp_connection::io;
 use crate::server_error::ServerError;
 use engine::game::game_error;
+use engine::game::game_result::GameResult;
 use engine::player_move::Move;
 use engine::player_symbol::PlayerSymbol;
 use error_stack::{bail, Result};
@@ -33,9 +34,13 @@ pub async fn handle_create_game<Repository: GameRepository + ?Sized, Writer: Asy
         Ok(())
     } else {
         info!("{game_configuration:?}");
-        let (game_manager_created, uuid) =
+        let game_manager_created =
             create_new_game(game_configuration, game_repository.clone()).await;
         *game_manager = game_manager_created;
+        let uuid = game_manager
+            .as_ref()
+            .expect("Game manager should exist")
+            .get_game_id();
         info!("Game created: {uuid}",);
         io::write_message(&mut writer, &FromServer::GameCreated(uuid)).await?;
         io::write_message(
@@ -75,14 +80,13 @@ pub async fn handle_make_move<Writer: AsyncWrite + Unpin>(
     mut writer: Writer,
     player_symbol: PlayerSymbol,
     player_move: Move,
-) -> Result<(), ServerError> {
+) -> Result<bool, ServerError> {
     match game_manager
         .as_mut()
         .expect("Game manager should exist")
         .make_move(player_symbol, player_move)
     {
         Ok(ref result) => {
-            io::write_message(&mut writer, &FromServer::MoveOk(result.into())).await?;
             io::write_message(
                 &mut writer,
                 &FromServer::Board(
@@ -93,6 +97,15 @@ pub async fn handle_make_move<Writer: AsyncWrite + Unpin>(
                 ),
             )
             .await?;
+            if let GameResult::GameEnd(winner) = result {
+                io::write_message(&mut writer, &FromServer::GameEnded(*winner)).await?;
+                game_manager
+                    .as_mut()
+                    .expect("Game manager should exist")
+                    .end_game();
+                return Ok(true);
+            }
+            io::write_message(&mut writer, &FromServer::MoveOk(result.into())).await?;
         }
         Err(err) => {
             if err.current_context() == &game_error::GameError::MakingMoveError {
@@ -107,13 +120,30 @@ pub async fn handle_make_move<Writer: AsyncWrite + Unpin>(
             .await?;
         }
     }
+    Ok(false)
+}
+
+pub async fn handle_end_game<Writer: AsyncWrite + Unpin>(
+    game_manager: &mut Option<GameManager>,
+    mut writer: Writer,
+    player: Option<PlayerSymbol>,
+) -> Result<(), ServerError> {
+    let winner = game_manager
+        .as_mut()
+        .expect("Game manager should exist")
+        .set_winner(player);
+    io::write_message(&mut writer, &FromServer::GameEnded(winner)).await?;
+    game_manager
+        .as_mut()
+        .expect("Game manager should exist")
+        .end_game();
     Ok(())
 }
 
 async fn create_new_game<Repository: GameRepository + ?Sized>(
     game_configuration: GameConfiguration,
     game_repository: Arc<Mutex<Box<Repository>>>,
-) -> (Option<GameManager>, Uuid) {
+) -> Option<GameManager> {
     #[cfg(test)]
     let mut uuid = Uuid::nil();
     #[cfg(not(test))]
@@ -121,7 +151,7 @@ async fn create_new_game<Repository: GameRepository + ?Sized>(
     while !game_repository.lock().await.add_game(uuid).await {
         uuid = Uuid::new_v4();
     }
-    (Some(GameManager::new(uuid, &game_configuration)), uuid)
+    Some(GameManager::new(uuid, &game_configuration))
 }
 
 pub async fn check_is_game_created<Writer: AsyncWrite + Unpin>(

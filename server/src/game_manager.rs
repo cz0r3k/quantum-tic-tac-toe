@@ -13,7 +13,6 @@ use std::time::Duration;
 use uuid::Uuid;
 
 pub struct GameManager {
-    #[allow(unused)]
     uuid: Uuid,
     game: Game,
     #[allow(unused)]
@@ -53,4 +52,16 @@ impl GameManager {
     pub fn get_board(&self) -> Board {
         self.game.get_board().into()
     }
+
+    pub fn set_winner(&mut self, player: Option<PlayerSymbol>) -> Option<PlayerSymbol> {
+        self.game.end_game(player).expect("Should not error");
+        player
+    }
+
+    pub fn get_game_id(&self) -> Uuid {
+        self.uuid
+    }
+
+    #[allow(clippy::unused_self)]
+    pub fn end_game(&mut self) {}
 }

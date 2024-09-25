@@ -10,4 +10,5 @@ pub enum ToServer {
     EndConnection,
     GetPlayerAssignment,
     MakeMove((PlayerSymbol, Move)),
+    EndGame(Option<PlayerSymbol>),
 }

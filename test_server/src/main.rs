@@ -25,6 +25,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("{n} bytes read");
     let decoded = bincode::deserialize::<FromServer>(&buf[..n])?;
     println!("{decoded:?}");
+    let n = stream.read(&mut buf).await?;
+    println!("{n} bytes read");
+    let decoded = bincode::deserialize::<FromServer>(&buf[..n])?;
+    println!("{decoded:?}");
 
     let encode = bincode::serialize(&ToServer::GetPlayerAssignment).unwrap();
     stream.write_all(&encode).await?;

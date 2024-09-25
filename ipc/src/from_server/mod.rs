@@ -7,6 +7,7 @@ use crate::player_assignment::PlayerAssignment;
 
 use crate::from_server::board_ipc::Board;
 use crate::from_server::game_result_ipc::GameResult;
+use engine::player_symbol::PlayerSymbol;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -21,4 +22,6 @@ pub enum FromServer {
     MoveOk(GameResult),
     MoveErr(GameError),
     GameCrash,
+    GameEnded(Option<PlayerSymbol>),
+    EndOfTime(PlayerSymbol),
 }

@@ -7,7 +7,7 @@ use engine::player_symbol::PlayerSymbol;
 use error_stack::Result;
 use ipc::from_server::board_ipc::Board;
 use ipc::game_configuration::GameConfiguration;
-use ipc::game_history::GameHistory;
+use ipc::moves_history::MovesHistory;
 use ipc::player_assignment::PlayerAssignment;
 use std::time::Duration;
 use uuid::Uuid;
@@ -18,7 +18,7 @@ pub struct GameManager {
     #[allow(unused)]
     timer: Timer,
     player_assignment: PlayerAssignment,
-    history: GameHistory,
+    history: MovesHistory,
 }
 
 impl GameManager {
@@ -31,7 +31,7 @@ impl GameManager {
                 game_configuration.increment(),
             ),
             player_assignment: PlayerAssignment::new(*game_configuration.first_player()),
-            history: GameHistory::new(uuid, game_configuration.size()),
+            history: MovesHistory::new(uuid, game_configuration.size()),
         }
     }
 
@@ -45,7 +45,8 @@ impl GameManager {
         player_move: Move,
     ) -> Result<GameResult, GameError> {
         let result = self.game.player_move(player_move, player)?;
-        self.history.add_move(player_move, Duration::default());
+        self.history
+            .add_move(player_move, Duration::default(), player); // TODO add time
         Ok(result)
     }
 

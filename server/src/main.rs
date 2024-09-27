@@ -4,6 +4,7 @@ mod configuration;
 mod game_manager;
 mod game_repository;
 mod process_tcp_connection;
+mod save_history;
 mod server_error;
 mod timer;
 

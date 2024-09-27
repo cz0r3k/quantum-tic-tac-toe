@@ -9,6 +9,10 @@ pub enum ServerError {
     TCPError,
     SerializationError,
     GameError,
+    SaveGameError,
+    LocalHistoryError,
+    HistoryNotExistError,
+    RabbitMQError,
 }
 
 impl fmt::Display for ServerError {

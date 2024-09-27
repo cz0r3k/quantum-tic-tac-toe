@@ -2,5 +2,9 @@
 
 resolver = "2"
 
-members = [ "engine", "ipc", "server", "test_server",
-]
+members = ["engine", "ipc", "server", "test_server"]
+
+[profile.release]
+strip = "symbols"
+lto = "fat"
+panic = "abort"

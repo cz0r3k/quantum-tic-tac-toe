@@ -147,9 +147,9 @@ async fn create_new_game<Repository: GameRepository + ?Sized>(
     #[cfg(test)]
     let mut uuid = Uuid::nil();
     #[cfg(not(test))]
-    let mut uuid = Uuid::new_v4();
+    let mut uuid = Uuid::now_v7();
     while !game_repository.lock().await.add_game(uuid).await {
-        uuid = Uuid::new_v4();
+        uuid = Uuid::now_v7();
     }
     Some(GameManager::new(uuid, &game_configuration))
 }

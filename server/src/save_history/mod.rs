@@ -1,5 +1,5 @@
-pub mod local;
-mod rabbitmq;
+pub mod local_history;
+pub mod rabbitmq_history;
 
 use crate::server_error::ServerError;
 use async_trait::async_trait;

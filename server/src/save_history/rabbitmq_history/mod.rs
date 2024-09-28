@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use crate::save_history::SaveHistory;
 use crate::server_error::ServerError;
 use async_trait::async_trait;
@@ -6,7 +9,7 @@ use ipc::game_history::GameHistory;
 use ipc::moves_history::MovesHistory;
 use lapin::options::{BasicPublishOptions, QueueDeclareOptions};
 use lapin::types::FieldTable;
-use lapin::{BasicProperties, Channel};
+use lapin::{BasicProperties, Channel, Connection, ConnectionProperties};
 use uuid::Uuid;
 
 const QUEUE_NAME: &str = "game_history";
@@ -43,12 +46,11 @@ impl SaveHistory for Rabbitmq {
 
 impl Rabbitmq {
     #[allow(unused)]
-    pub async fn new(connection_string: String) -> Result<Self, ServerError> {
-        let connection =
-            lapin::Connection::connect(&connection_string, lapin::ConnectionProperties::default())
-                .await
-                .change_context(ServerError::RabbitMQError)
-                .attach_printable("Can't connect")?;
+    pub async fn new(connection_string: &str) -> Result<Self, ServerError> {
+        let connection = Connection::connect(connection_string, ConnectionProperties::default())
+            .await
+            .change_context(ServerError::RabbitMQError)
+            .attach_printable("Can't connect")?;
         let channel = connection
             .create_channel()
             .await

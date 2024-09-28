@@ -73,7 +73,7 @@ mod test {
             .expect("Container should start");
         let ports = container.ports().await.unwrap();
         let port = ports.map_to_host_port_ipv4(REDIS_PORT.tcp()).unwrap();
-        let redis_connection_string = format!("{ADDRESS}:{port}/",);
+        let redis_connection_string = format!("{ADDRESS}:{port}/");
         let game_repository_redis =
             Arc::new(Mutex::new(RedisRepository::new(&redis_connection_string)));
         game_repository_redis.lock().await.connect().await.unwrap();

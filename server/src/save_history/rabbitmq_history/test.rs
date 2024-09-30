@@ -23,7 +23,7 @@ async fn consume_message(connection_string: &str) -> Vec<u8> {
 
     channel
         .queue_declare(
-            QUEUE_NAME,
+            QUEUE_SAVE_GAME,
             QueueDeclareOptions::default(),
             FieldTable::default(),
         )
@@ -32,7 +32,7 @@ async fn consume_message(connection_string: &str) -> Vec<u8> {
 
     let mut consumer = channel
         .basic_consume(
-            QUEUE_NAME,
+            QUEUE_SAVE_GAME,
             "consumer",
             BasicConsumeOptions::default(),
             FieldTable::default(),
@@ -41,6 +41,7 @@ async fn consume_message(connection_string: &str) -> Vec<u8> {
         .unwrap();
 
     let delivery = consumer.next().await.unwrap().unwrap();
+    delivery.ack(BasicAckOptions::default()).await.unwrap();
     delivery.data
 }
 

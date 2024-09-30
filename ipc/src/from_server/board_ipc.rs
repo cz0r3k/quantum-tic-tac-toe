@@ -3,7 +3,7 @@ use engine::field::Field;
 use engine::{board, DEFAULT_BOARD_SIZE};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, PartialEq)]
 pub struct Board(pub Array2D<Field>);
 
 impl From<&board::Board> for Board {

@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct GameHistory {
     game_uuid: Uuid,
     moves: Vec<(Move, PlayerSymbol)>,

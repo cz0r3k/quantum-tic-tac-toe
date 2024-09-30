@@ -12,5 +12,5 @@ use uuid::Uuid;
 #[async_trait]
 pub trait SaveHistory: Send {
     async fn save_game(&self, moves_history: &MovesHistory) -> Result<(), ServerError>;
-    async fn get_game_history(&self, game_uuid: Uuid) -> Result<GameHistory, ServerError>;
+    async fn get_game_history(&mut self, game_uuid: Uuid) -> Result<GameHistory, ServerError>;
 }

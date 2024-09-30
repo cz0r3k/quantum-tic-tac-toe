@@ -35,7 +35,7 @@ impl SaveHistory for Local {
         Ok(())
     }
 
-    async fn get_game_history(&self, game_uuid: Uuid) -> Result<GameHistory, ServerError> {
+    async fn get_game_history(&mut self, game_uuid: Uuid) -> Result<GameHistory, ServerError> {
         let json_string = read_to_string(format!("{HISTORY_PATH}/{game_uuid}"))
             .await
             .change_context(ServerError::HistoryNotExistError)

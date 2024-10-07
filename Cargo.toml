@@ -2,7 +2,7 @@
 
 resolver = "2"
 
-members = ["engine", "ipc", "server", "test_server"]
+members = ["engine", "history_service", "ipc", "server", "test_server"]
 
 [profile.release]
 strip = "symbols"

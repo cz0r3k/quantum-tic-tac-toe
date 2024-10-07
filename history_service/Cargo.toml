@@ -1,0 +1,19 @@
+[package]
+name = "history_service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ipc = { path = "../ipc" }
+mongodb = "3.1.0"
+uuid = { version = "1.10.0", features = ["serde", "v7", "v4"] }
+error-stack = "0.5.0"
+lapin = "2.5.0"
+tokio = { version = "1", features = ["full"] }
+log = "0.4.22"
+bincode = "1.3.3"
+futures = "0.3.30"
+async-trait = "0.1.83"
+
+[dev-dependencies]
+testcontainers = "0.23.1"

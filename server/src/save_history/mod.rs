@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 #[allow(unused)]
 #[async_trait]
-pub trait SaveHistory: Send {
+pub trait SaveHistory {
     async fn save_game(&self, moves_history: &MovesHistory) -> Result<(), ServerError>;
-    async fn get_game_history(&mut self, game_uuid: Uuid) -> Result<GameHistory, ServerError>;
+    async fn get_game_history(&self, game_uuid: Uuid) -> Result<GameHistory, ServerError>;
 }

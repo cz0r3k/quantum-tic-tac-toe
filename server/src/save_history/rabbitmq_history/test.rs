@@ -1,5 +1,6 @@
 use super::*;
 use futures::StreamExt;
+use ipc::rabbitmq::CONSUMER_SERVER;
 use lapin::options::BasicConsumeOptions;
 use lapin::{options::*, types::FieldTable, Connection, ConnectionProperties};
 use std::sync::Arc;
@@ -35,7 +36,7 @@ async fn consume_message(connection_string: &str) -> Vec<u8> {
     let mut consumer = channel
         .basic_consume(
             QUEUE_SAVE_GAME,
-            "consumer",
+            CONSUMER_SERVER,
             BasicConsumeOptions::default(),
             FieldTable::default(),
         )
@@ -67,7 +68,7 @@ async fn handle_get_history(connection_string: &str, barrier: Arc<Barrier>) {
     let mut consumer = channel
         .basic_consume(
             QUEUE_GET_GAME,
-            "consumer",
+            CONSUMER_SERVER,
             BasicConsumeOptions::default(),
             FieldTable::default(),
         )
@@ -120,7 +121,9 @@ async fn send_empty_move_history() {
     let port = ports.map_to_host_port_ipv4(RABBITMQ_PORT.tcp()).unwrap();
     let rabbitmq_connection_string = format!("{ADDRESS}:{port}");
 
-    let rabbitmq_history = Rabbitmq::new(&rabbitmq_connection_string).await.unwrap();
+    let rabbitmq_history = RabbitmqHistory::new(&rabbitmq_connection_string)
+        .await
+        .unwrap();
     let move_history = MovesHistory::new(UUID, 3);
     rabbitmq_history.save_game(&move_history).await.unwrap();
 
@@ -144,7 +147,9 @@ async fn get_empty_game_history() {
     let rabbitmq_connection_string = format!("{ADDRESS}:{port}");
     let barrier = Arc::new(Barrier::new(2));
 
-    let mut rabbitmq_history = Rabbitmq::new(&rabbitmq_connection_string).await.unwrap();
+    let rabbitmq_history = RabbitmqHistory::new(&rabbitmq_connection_string)
+        .await
+        .unwrap();
 
     let barrier_clone = barrier.clone();
     let handle = tokio::spawn(async move {

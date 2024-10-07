@@ -11,10 +11,10 @@ use uuid::Uuid;
 const HISTORY_PATH: &str = "game_history";
 
 #[allow(unused)]
-pub struct Local {}
+pub struct LocalHistory {}
 
 #[async_trait]
-impl SaveHistory for Local {
+impl SaveHistory for LocalHistory {
     async fn save_game(&self, moves_history: &MovesHistory) -> Result<(), ServerError> {
         let game_history = GameHistory::try_from(moves_history)
             .change_context(ServerError::GameError)
@@ -35,7 +35,7 @@ impl SaveHistory for Local {
         Ok(())
     }
 
-    async fn get_game_history(&mut self, game_uuid: Uuid) -> Result<GameHistory, ServerError> {
+    async fn get_game_history(&self, game_uuid: Uuid) -> Result<GameHistory, ServerError> {
         let json_string = read_to_string(format!("{HISTORY_PATH}/{game_uuid}"))
             .await
             .change_context(ServerError::HistoryNotExistError)
@@ -47,7 +47,7 @@ impl SaveHistory for Local {
     }
 }
 #[allow(unused)]
-impl Local {
+impl LocalHistory {
     pub fn new() -> Result<Self, ServerError> {
         std::fs::create_dir_all(HISTORY_PATH)
             .change_context(ServerError::LocalHistoryError)

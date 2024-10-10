@@ -3,11 +3,14 @@ use std::error::Error;
 use std::fmt::Formatter;
 
 #[derive(Debug, PartialEq)]
-#[allow(clippy::enum_variant_names, unused)]
+#[allow(clippy::enum_variant_names)]
 pub enum HistoryError {
     MongoDBError,
     MapGameHistory,
     GameNotFound,
+    DeserializeError,
+    SerializeError,
+    RabbitMQError,
 }
 
 impl fmt::Display for HistoryError {

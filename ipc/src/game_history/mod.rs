@@ -1,4 +1,5 @@
 mod game_history_error;
+pub mod mongo_doc;
 
 use crate::from_server::board_ipc::Board;
 use crate::game_history::game_history_error::GameHistoryError;
